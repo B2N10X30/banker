@@ -5,5 +5,5 @@
   - [x] Register User
   - [x] Hash User Password
   - [ ] Delete user
-  - [ ] Update user
+  - [X] Update user
   - [ ] --deposit, withdraw, Transfer, e.t.c

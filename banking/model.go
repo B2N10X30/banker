@@ -21,7 +21,7 @@ type Account struct {
 	CreatedAt     time.Time
 }
 
-type Bank struct{
+type Bank struct {
 	Customers []Account
 }
 
@@ -67,8 +67,19 @@ func GenerateAccountNum() string {
 
 }
 
-func(b *Bank) UpdateUserDetails(accounNumber string){
-	for _, customer := range b.Customers{
-		if customer.AccountNumber == 
+func (b *Bank) UpdateUserDetails(accounNumber, firstName, lastName, email, address, phoneNumber, pasword string) (*Account, error) {
+	for i, customer := range b.Customers {
+		if customer.AccountNumber == accounNumber {
+			//all changeable details should be changed
+			b.Customers[i].FirstName = firstName
+			b.Customers[i].LastName = lastName
+			b.Customers[i].Email = email
+			b.Customers[i].Address = address
+			b.Customers[1].PhoneNumber = phoneNumber
+			b.Customers[i].Password = HashPassword(pasword)
+			//updated customer
+			return &b.Customers[i], nil
+		}
 	}
+	return nil, fmt.Errorf("customer account for account number: %s not found", accounNumber)
 }
