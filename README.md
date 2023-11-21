@@ -4,6 +4,5 @@
   - [x] Generate Account Number for user
   - [x] Register User
   - [x] Hash User Password
-  - [ ] Delete user
   - [X] Update user
-  - [ ] --deposit, withdraw, Transfer, e.t.c
+  - [] --deposit, withdraw, Transfer, e.t.c

@@ -19,6 +19,7 @@ type Account struct {
 	Password      string
 	AccountNumber string
 	CreatedAt     time.Time
+	Balance       uint64
 }
 
 type Bank struct {
@@ -38,6 +39,7 @@ func (a *Account) RegisterAccount(firstName, lastName, email, address, phoneNumb
 			Password:      HashPassword(password),
 			AccountNumber: GenerateAccountNum(),
 			CreatedAt:     time.Now(),
+			Balance:       000_000,
 		},
 		nil
 }
@@ -67,9 +69,9 @@ func GenerateAccountNum() string {
 
 }
 
-func (b *Bank) UpdateUserDetails(accounNumber, firstName, lastName, email, address, phoneNumber, pasword string) (*Account, error) {
+func (b *Bank) UpdateUserDetails(accountNumber, firstName, lastName, email, address, phoneNumber, pasword string) (*Account, error) {
 	for i, customer := range b.Customers {
-		if customer.AccountNumber == accounNumber {
+		if customer.AccountNumber == accountNumber {
 			//all changeable details should be changed
 			b.Customers[i].FirstName = firstName
 			b.Customers[i].LastName = lastName
@@ -81,5 +83,16 @@ func (b *Bank) UpdateUserDetails(accounNumber, firstName, lastName, email, addre
 			return &b.Customers[i], nil
 		}
 	}
-	return nil, fmt.Errorf("customer account for account number: %s not found", accounNumber)
+	return nil, fmt.Errorf("customer account for account number: %s not found", accountNumber)
+}
+
+func (b *Bank) DeleteUserAccount(accountNumber string) (*[]Account, error) {
+	for i, customer := range b.Customers {
+		if customer.AccountNumber == accountNumber {
+			b.Customers = append(b.Customers[:i], b.Customers[i+1:]...)
+			return &b.Customers, nil
+		}
+	}
+	//if no account is not found
+	return nil, fmt.Errorf("customer account for account number: %s not found", accountNumber)
 }
