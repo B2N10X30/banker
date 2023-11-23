@@ -19,13 +19,14 @@ type Account struct {
 	AccountNumber uuid.UUID
 	CreatedAt     time.Time
 	Balance       float64
+	Notificaition string
 }
 
 type Bank struct {
 	Customers []Account
 }
 
-func (a *Account) RegisterAccount(firstName, lastName, email, address, phoneNumber, pin string, account uint64) (*Account, error) {
+func NewAccount(firstName, lastName, email, address, phoneNumber, pin string) (*Account, error) {
 	const PINLenght = 4
 	if len(pin) < PINLenght || len(pin) > PINLenght {
 		return nil, fmt.Errorf("PIN should consist be 4 characters")
@@ -42,10 +43,8 @@ func (a *Account) RegisterAccount(firstName, lastName, email, address, phoneNumb
 		PIN:           HashPassword(pin),
 		AccountNumber: GenerateAccountNumber(),
 		CreatedAt:     time.Now(),
-		Balance:       000_000,
+		Balance:       0.0,
 	}
-	log.Printf("Account registered: AccountNumber=%s, FirstName=%s, LastName=%s, Email=%s",
-		a.AccountNumber, a.FirstName, a.LastName, a.Email)
 	return &newUserAccount, nil
 
 }
@@ -73,40 +72,53 @@ func (a *Account) ChangeAddress(address string) error {
 	return ErrAddress
 }
 
-func (a *Account) Deposit(amount float64) (float64, error) {
+func (a *Account) Deposit(amount float64) (string, error) {
 	if amount <= 0 {
-		return a.Balance, fmt.Errorf("invalid deposit amount: %f", amount)
+		return "", fmt.Errorf("invalid deposit amount: %f", amount)
 	}
 	a.Balance += amount
-	fmt.Println(SendNotification("deposit"))
-	return a.Balance, nil
+	a.Notificaition = SendNotification("deposit")
+	return a.Notificaition, nil
 }
 
-func (a *Account) Withdraw(amount float64) (float64, error) {
-	if amount <= 0 || amount >= a.Balance {
-		return a.Balance, fmt.Errorf("invalid withdrawal amount: %f", amount)
+func (a *Account) Withdraw(amount float64) (string, error) {
+	if amount >= a.Balance {
+		return "", ErrInsufficientBalance
+	}
+	if amount <= 0 {
+		return "", fmt.Errorf("invalid withdrawal Amount: %f", amount)
 	}
 	a.Balance -= amount
-	notificaition := SendNotification("withdrawal")
-	fmt.Println(notificaition)
-	return a.Balance, nil
+	a.Notificaition = SendNotification("withdrawal")
+	return a.Notificaition, nil
 }
 
 func (a *Account) Transfer(amount float64, recipientAccountNumber uuid.UUID) (string, error) {
 	// success := fmt.Sprintf("Transfer of %.2f to %v was successful", amount, recipientAccountNumber)
-	senderBalance := a.Balance
-	if amount <= 0 || amount >= senderBalance {
-		return "", fmt.Errorf("invalid Transfer amount or Insufficient Balance: %f", amount)
+	if amount <= 0 {
+		return "", fmt.Errorf("invalid Transfer amount: %f", amount)
 	}
-	senderBalance -= amount
+	if amount >= a.Balance {
+		return "", ErrInsufficientBalance
+	}
 
 	recipient, err := a.GetUserByAccountNumber(recipientAccountNumber)
 	if err != nil {
 		return "", ErrFetchingUser
 	}
+	a.Balance -= amount
 	recipient.Balance += amount
+	a.Notificaition = SendNotification("transfer")
+	return a.Notificaition, nil
+}
 
-	return SendNotification("transfer"), nil
+func (b *Bank) RegisterNewUser(firstName, lastName, email, address, phoneNumber, pin string) (*Bank, error) {
+	newUser, err := NewAccount(firstName, lastName, email, address, phoneNumber, pin)
+	if err != nil {
+		log.Fatal(err)
+	}
+	b.Customers = append(b.Customers, *newUser)
+	return b, nil
 }
 
 // return only error here
