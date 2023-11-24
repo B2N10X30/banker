@@ -3,6 +3,7 @@ package banking
 import (
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -72,44 +73,60 @@ func (a *Account) ChangeAddress(address string) error {
 	return ErrAddress
 }
 
-func (a *Account) Deposit(amount float64) (string, error) {
+func (a *Account) Deposit(amount float64) (string, *os.File, error) {
+	transactionType := "Deposit"
 	if amount <= 0 {
-		return "", fmt.Errorf("invalid deposit amount: %f", amount)
+		return "", nil, fmt.Errorf("invalid deposit amount: %f", amount)
 	}
 	a.Balance += amount
 	a.Notificaition = SendNotification("deposit")
-	return a.Notificaition, nil
+	receipt, err := WriteReceipt(a, transactionType, amount)
+	if err != nil {
+		log.Printf("Error generating reciept: %v", err)
+	}
+	return a.Notificaition, receipt, nil
 }
 
-func (a *Account) Withdraw(amount float64) (string, error) {
+func (a *Account) Withdraw(amount float64) (string, *os.File, error) {
+	transactionType := "Withdrawal"
 	if amount >= a.Balance {
-		return "", ErrInsufficientBalance
+		return "", nil, ErrInsufficientBalance
 	}
 	if amount <= 0 {
-		return "", fmt.Errorf("invalid withdrawal Amount: %f", amount)
+		return "", nil, fmt.Errorf("invalid withdrawal Amount: %f", amount)
 	}
 	a.Balance -= amount
 	a.Notificaition = SendNotification("withdrawal")
-	return a.Notificaition, nil
+	receipt, err := WriteReceipt(a, transactionType, amount)
+	if err != nil {
+		log.Printf("Error generating reciept: %v", err)
+	}
+	return a.Notificaition, receipt, nil
 }
 
-func (a *Account) Transfer(amount float64, recipientAccountNumber uuid.UUID) (string, error) {
+func (a *Account) Transfer(amount float64, recipientAccountNumber uuid.UUID) (string, *os.File, error) {
 	// success := fmt.Sprintf("Transfer of %.2f to %v was successful", amount, recipientAccountNumber)
+	transactionType := "Transfer"
 	if amount <= 0 {
-		return "", fmt.Errorf("invalid Transfer amount: %f", amount)
+		return "", nil, fmt.Errorf("invalid Transfer amount: %f", amount)
 	}
 	if amount >= a.Balance {
-		return "", ErrInsufficientBalance
+		return "", nil, ErrInsufficientBalance
 	}
 
 	recipient, err := a.GetUserByAccountNumber(recipientAccountNumber)
 	if err != nil {
-		return "", ErrFetchingUser
+		return "", nil, ErrFetchingUser
 	}
 	a.Balance -= amount
 	recipient.Balance += amount
 	a.Notificaition = SendNotification("transfer")
-	return a.Notificaition, nil
+	file, err := WriteReceipt(recipient, transactionType, amount)
+	if err != nil {
+		log.Printf("Error generatingn receipt: %v", err)
+	}
+
+	return a.Notificaition, file, nil
 }
 
 func (b *Bank) RegisterNewUser(firstName, lastName, email, address, phoneNumber, pin string) (*Bank, error) {

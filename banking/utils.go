@@ -3,8 +3,10 @@ package banking
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -54,6 +56,7 @@ var (
 	ErrOTP                 = errors.New("error generating OTP")
 	ErrFetchingUser        = errors.New("error recipient fetching recipient")
 	ErrInsufficientBalance = errors.New("insufficient balance")
+	ErrGeneratingReceipt   = errors.New("error Generating receipt")
 )
 
 func SendNotification(transaction string) string {
@@ -71,4 +74,31 @@ func SendNotification(transaction string) string {
 	default:
 		return "Unable to perform Operation"
 	}
+}
+
+func GeneratePDFReciept(transaction string) *os.File {
+	fileName := transaction + ".pdf"
+	filePath, err := os.Create(fileName)
+	if err != nil {
+		log.Printf("%v", err)
+	}
+	filePermission := 0444
+
+	err = os.Chmod(filePath.Name(), fs.FileMode(filePermission))
+	if err != nil {
+		log.Println(err)
+	}
+	return filePath
+}
+
+func WriteReceipt(account *Account, transactionType string, amount float64) (*os.File, error) {
+	file := GeneratePDFReciept(transactionType)
+	Notification := fmt.Sprintf("\nTransaction Receipt\n\tTimestamp: %s\n\tTransaction Type: %s\n\tAmount:%.2f\n\tCleared Balance: %.2f\n", time.Now().Format("09-10-20 15:30:00"), transactionType, amount, account.Balance)
+	_, err := file.Write([]byte(Notification))
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	defer file.Close()
+	return file, nil
 }
