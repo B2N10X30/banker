@@ -11,6 +11,7 @@ import (
 
 type User struct {
 	FirstName, LastName, Email, Address, PhoneNumber string
+	DateOfBirth                                      string
 }
 
 type Account struct {
@@ -27,11 +28,17 @@ type Bank struct {
 	Customers []Account
 }
 
-func NewAccount(firstName, lastName, email, address, phoneNumber, pin string) (*Account, error) {
+func NewAccount(firstName, lastName, email, address, phoneNumber, pin, dob string) (*Account, error) {
 	const PINLenght = 4
-	if len(pin) < PINLenght || len(pin) > PINLenght {
+	if len(pin) != PINLenght {
 		return nil, fmt.Errorf("PIN should consist be 4 characters")
 	}
+	Date, err := ParseDate(dob)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse date")
+	}
+	DOB := Date.Format("2006 January 02") //date format converts date to specified format
+
 	newUserAccount := Account{
 		User: User{
 			FirstName:   firstName,
@@ -39,6 +46,7 @@ func NewAccount(firstName, lastName, email, address, phoneNumber, pin string) (*
 			Email:       email,
 			Address:     address,
 			PhoneNumber: phoneNumber,
+			DateOfBirth: DOB,
 		},
 		IsRegistered:  true,
 		PIN:           HashPassword(pin),
@@ -64,13 +72,29 @@ func (a *Account) ChangePIN(pin string) error {
 }
 
 func (a *Account) ChangeEmail(email string) error {
+	if isEmpty(email) {
+		return ErrEmail
+	}
 	a.Email = email
-	return ErrEmail
+	return nil
 }
 
 func (a *Account) ChangeAddress(address string) error {
+	if isEmpty(address) {
+		return ErrAddress
+	}
 	a.Address = address
-	return ErrAddress
+	return nil
+}
+
+func (a *Account) ChangeDOB(dob string) (string, error) {
+	Date, err := ParseDate(dob)
+	if err != nil {
+		return "", fmt.Errorf("%v", ErrDOB)
+	}
+	DOB := Date.Format("2006 January 02")
+	a.DateOfBirth = DOB
+	return "", nil
 }
 
 func (a *Account) Deposit(amount float64) (string, *os.File, error) {
@@ -129,8 +153,8 @@ func (a *Account) Transfer(amount float64, recipientAccountNumber uuid.UUID) (st
 	return a.Notificaition, file, nil
 }
 
-func (b *Bank) RegisterNewUser(firstName, lastName, email, address, phoneNumber, pin string) (*Bank, error) {
-	newUser, err := NewAccount(firstName, lastName, email, address, phoneNumber, pin)
+func (b *Bank) RegisterNewUser(firstName, lastName, email, address, phoneNumber, pin, dob string) (*Bank, error) {
+	newUser, err := NewAccount(firstName, lastName, email, address, phoneNumber, pin, dob)
 	if err != nil {
 		log.Fatal(err)
 	}

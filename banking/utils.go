@@ -57,7 +57,12 @@ var (
 	ErrFetchingUser        = errors.New("error recipient fetching recipient")
 	ErrInsufficientBalance = errors.New("insufficient balance")
 	ErrGeneratingReceipt   = errors.New("error Generating receipt")
+	ErrDOB                 = errors.New("erro parsing date")
 )
+
+func isEmpty(s string) bool {
+	return len(s) == 0
+}
 
 func SendNotification(transaction string) string {
 	switch transaction {
@@ -101,4 +106,14 @@ func WriteReceipt(account *Account, transactionType string, amount float64) (*os
 	}
 	defer file.Close()
 	return file, nil
+}
+
+func ParseDate(date string) (time.Time, error) {
+	const dateFormat = "06-01-02" // YY-MM-DD HH:MM:SS
+	parsedDate, err := time.Parse(dateFormat, date)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return parsedDate, err
+
 }
