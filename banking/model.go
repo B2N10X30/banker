@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gopkg.in/gomail.v2"
 )
 
 type User struct {
@@ -153,6 +154,11 @@ func (a *Account) Transfer(amount float64, recipientAccountNumber uuid.UUID) (st
 	return a.Notificaition, file, nil
 }
 
+func (a *Account) SendEmailNotification() {
+	Dailer := gomail.NewDialer("contact@bool.com", 25, "Admin", "^R0b0+@b00l")
+	Mailer := gomail.NewMessage()
+
+}
 func (b *Bank) RegisterNewUser(firstName, lastName, email, address, phoneNumber, pin, dob string) (*Bank, error) {
 	newUser, err := NewAccount(firstName, lastName, email, address, phoneNumber, pin, dob)
 	if err != nil {
