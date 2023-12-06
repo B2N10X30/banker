@@ -157,6 +157,8 @@ func (a *Account) Transfer(amount float64, recipientAccountNumber uuid.UUID) (st
 func (a *Account) SendEmailNotification() {
 	Dailer := gomail.NewDialer("contact@bool.com", 25, "Admin", "^R0b0+@b00l")
 	Mailer := gomail.NewMessage()
+	//Messages
+	Dailer.DialAndSend(Mailer)
 
 }
 func (b *Bank) RegisterNewUser(firstName, lastName, email, address, phoneNumber, pin, dob string) (*Bank, error) {
